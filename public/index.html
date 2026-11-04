@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trắc Nghiệm AI - Loại Dần Realtime</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --success: #10b981;
+      --danger: #ef4444;
+      --bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --text: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .badge-alive { background: #d1fae5; color: #065f46; }
+    .badge-spectator { background: #fee2e2; color: #991b1b; }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: var(--primary-hover); }
+    .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .timer-container {
+      width: 100%;
+      background: #e5e7eb;
+      height: 10px;
+      border-radius: 5px;
+      margin: 16px 0;
+      overflow: hidden;
+    }
+
+    .timer-bar {
+      height: 100%;
+      background: var(--primary);
+      width: 100%;
+      transition: width 1s linear;
+    }
+
+    .options-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .option-btn {
+      padding: 16px;
+      background: #f9fafb;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      text-align: left;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background: #eef2ff;
+    }
+
+    .option-btn.selected {
+      background: #eef2ff;
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .option-btn.correct { background: #d1fae5; border-color: var(--success); color: #065f46; }
+    .option-btn.incorrect { background: #fee2e2; border-color: var(--danger); color: #991b1b; }
+
+    .result-box {
+      text-align: center;
+      padding: 24px;
+      border-radius: 12px;
+      margin-top: 16px;
+    }
+
+    .result-survived { background: #ecfdf5; border: 2px solid #10b981; color: #065f46; }
+    .result-eliminated { background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- MÀN HÌNH 1: ĐĂNG KÝ TÊN -->
+    <div id="screen-login" class="screen active">
+      <h1>AI QUIZ SHOW 🏆</h1>
+      <p style="text-align: center; color: #6b7280; margin-bottom: 24px;">Trò chơi Trắc nghiệm AI Loại Dần Thời Gian Thực</p>
+      <div class="input-group">
+        <label for="player-name">Tên hoặc Biệt danh của bạn:</label>
+        <input type="text" id="player-name" placeholder="Ví dụ: Nguyễn Văn A" maxlength="25">
+      </div>
+      <button class="btn" id="btn-join">VÀO PHÒNG CHỜ</button>
+    </div>
+
+    <!-- MÀN HÌNH 2: PHÒNG CHỜ -->
+    <div id="screen-lobby" class="screen">
+      <div id="status-badge" class="badge badge-alive">ĐANG THI ĐẤU</div>
+      <h2>Phòng Chờ Thi Đấu</h2>
+      <p style="text-align: center; color: #4b5563; margin-top: 16px;" id="lobby-message">
+        Xin chào <strong id="display-name"></strong>! Vui lòng chờ Ban tổ chức phát câu hỏi tiếp theo...
+      </p>
+    </div>
+
+    <!-- MÀN HÌNH 3: CÂU HỎI -->
+    <div id="screen-question" class="screen">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="player-badge" class="badge badge-alive">ĐANG THI ĐẤU</span>
+        <span style="font-weight: bold; color: var(--primary);" id="question-number">Câu 1/8</span>
+      </div>
+
+      <div class="timer-container">
+        <div id="timer-bar" class="timer-bar"></div>
+      </div>
+      <p style="text-align: right; font-size: 0.85rem; color: #6b7280;" id="timer-text">Còn lại: 30s</p>
+
+      <h3 id="question-text" style="margin-top: 12px; font-size: 1.1rem; line-height: 1.5;">Nội dung câu hỏi ở đây?</h3>
+
+      <div class="options-grid" id="options-container">
+        <!-- 4 nút đáp án render bằng JS -->
+      </div>
+
+      <p id="answer-feedback" style="text-align: center; margin-top: 16px; font-weight: 600; color: var(--primary); min-height: 24px;"></p>
+    </div>
+
+    <!-- MÀN HÌNH 4: KẾT QUẢ CÂU HỎI -->
+    <div id="screen-result" class="screen">
+      <div id="result-box" class="result-box">
+        <h2 id="result-title">Kết Quả</h2>
+        <p id="result-message" style="margin-top: 8px; font-size: 1rem; line-height: 1.5;"></p>
+      </div>
+      <p style="text-align: center; color: #6b7280; margin-top: 20px;">Đang chờ câu hỏi tiếp theo từ Ban tổ chức...</p>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    let isAlive = true;
+    let timerInterval = null;
+    let selectedAnswer = null;
+
+    // Các phần tử DOM
+    const screenLogin = document.getElementById('screen-login');
+    const screenLobby = document.getElementById('screen-lobby');
+    const screenQuestion = document.getElementById('screen-question');
+    const screenResult = document.getElementById('screen-result');
+
+    const inputName = document.getElementById('player-name');
+    const btnJoin = document.getElementById('btn-join');
+    const displayName = document.getElementById('display-name');
+    
+    const questionNumber = document.getElementById('question-number');
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const timerBar = document.getElementById('timer-bar');
+    const timerText = document.getElementById('timer-text');
+    const answerFeedback = document.getElementById('answer-feedback');
+
+    const resultBox = document.getElementById('result-box');
+    const resultTitle = document.getElementById('result-title');
+    const resultMessage = document.getElementById('result-message');
+    const statusBadge = document.getElementById('status-badge');
+    const playerBadge = document.getElementById('player-badge');
+
+    function showScreen(screen) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      screen.classList.add('active');
+    }
+
+    function updateBadges(alive) {
+      isAlive = alive;
+      const text = alive ? 'ĐANG THI ĐẤU' : 'CHẾ ĐỘ THEO DÕI';
+      const className = alive ? 'badge badge-alive' : 'badge badge-spectator';
+      
+      statusBadge.textContent = text;
+      statusBadge.className = className;
+      playerBadge.textContent = text;
+      playerBadge.className = className;
+    }
+
+    // Nút tham gia game
+    btnJoin.addEventListener('click', () => {
+      const name = inputName.value.trim();
+      if (!name) return alert('Vui lòng nhập tên của bạn!');
+      socket.emit('join_game', name);
+    });
+
+    // Nhận thông tin đăng ký thành công
+    socket.on('joined_success', (data) => {
+      displayName.textContent = data.name;
+      updateBadges(data.isAlive);
+      showScreen(screenLobby);
+    });
+
+    // Nhận câu hỏi mới từ server
+    socket.on('new_question', (qData) => {
+      selectedAnswer = null;
+      answerFeedback.textContent = '';
+      questionNumber.textContent = `Câu ${qData.questionIndex}/${qData.totalQuestions}`;
+      questionText.textContent = qData.text;
+
+      optionsContainer.innerHTML = '';
+      qData.options.forEach((optText, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = `${String.fromCharCode(65 + index)}. ${optText}`;
+
+        if (!isAlive) {
+          btn.disabled = true;
+        } else {
+          btn.addEventListener('click', () => {
+            if (selectedAnswer !== null || !isAlive) return;
+            selectedAnswer = index;
+
+            // Highlight nút được chọn
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+
+            // Gửi đáp án lên server
+            socket.emit('submit_answer', index);
+          });
+        }
+        optionsContainer.appendChild(btn);
+      });
+
+      if (!isAlive) {
+        answerFeedback.textContent = '🔒 Bạn đang ở Chế độ theo dõi (không thể chọn đáp án).';
+      }
+
+      // Xử lý bộ đếm ngược 30s visual
+      let timeLeft = qData.timeLimit || 30;
+      timerText.textContent = `Còn lại: ${timeLeft}s`;
+      timerBar.style.width = '100%';
+
+      if (timerInterval) clearInterval(timerInterval);
+      const totalTime = timeLeft;
+      
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft < 0) {
+          clearInterval(timerInterval);
+          return;
+        }
+        timerText.textContent = `Còn lại: ${timeLeft}s`;
+        const percentage = (timeLeft / totalTime) * 100;
+        timerBar.style.width = `${percentage}%`;
+      }, 1000);
+
+      showScreen(screenQuestion);
+    });
+
+    // Server xác nhận đã nhận câu trả lời
+    socket.on('answer_received', (data) => {
+      const seconds = (data.responseTimeMs / 1000).toFixed(3);
+      answerFeedback.textContent = `✅ Đã ghi nhận! Thời gian: ${seconds}s`;
+      // Vô hiệu hóa chọn lại
+      document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+    });
+
+    // Nhận kết quả chốt vòng đấu
+    socket.on('round_result', (data) => {
+      if (timerInterval) clearInterval(timerInterval);
+
+      if (data.status === 'survived') {
+        updateBadges(true);
+        resultBox.className = 'result-box result-survived';
+        resultTitle.textContent = data.isFinalWinner ? '🏆 QUÁN QUÂN!' : '🎉 CHÚC MỪNG!';
+        resultMessage.textContent = data.message;
+      } else {
+        updateBadges(false);
+        resultBox.className = 'result-box result-eliminated';
+        resultTitle.textContent = '❌ BỊ LOẠI';
+        resultMessage.textContent = data.message;
+      }
+
+      showScreen(screenResult);
+    });
+
+    // Khi game được reset bởi Admin
+    socket.on('game_reset', () => {
+      if (timerInterval) clearInterval(timerInterval);
+      updateBadges(true);
+      showScreen(screenLobby);
+    });
+  </script>
+</body>
+</html>
